@@ -4,6 +4,7 @@
 1. [In vivo human RNA-Seq analysis](#invivohuman)
     1. [Quantify human genes from in vivo RNA-Seq samples](#invivohuman_quant)
     2. [Create human counts and TPM dataframes](#invivohuman_countstpm)
+    3. [Choose top candidate genes for IPA](#invivohuman_filtergenes)
 
 ## In vivo human RNA-Seq analysis <a name="invivohuman"></a>
 ### Quantify human genes from in vivo RNA-Seq samples <a name="invivohuman_quant"></a>
@@ -57,7 +58,7 @@ for(i in 1:ncol(tpm)){
 }
 ```
 
-### Choose top candidate genes for IPA <a name="invivohuman_countstpm"></a>
+### Choose top candidate genes for IPA <a name="invivohuman_filtergenes"></a>
 
 IPA allows only 3000 genes for core analysis. The 190,198 human transcripts in the analysis were pared down based on two criteria: (1) the transcript must have a CPM value in all samples greater than 2000 reads in the lowest sequenced sample and (2) the gene must have a log2TPM ratio value >2 or <-2 in at least one sample. After both filters are applied, the log2TPM ratio of the 2,697 genes that met both criteria were used as an input to IGV.
 
