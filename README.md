@@ -7,7 +7,7 @@
     3. [Choose top candidate genes for IPA](#invivohuman_filtergenes)
 
 ## In vivo human RNA-Seq analysis <a name="invivohuman"></a>
-### Quantify human genes from in vivo RNA-Seq samples <a name="invivohuman_quant"></a>
+### Quantify human genes from in vivo RNA-Seq samples (2019/10/14) <a name="invivohuman_quant"></a>
 ```{bash}
 for FASTQ in $(find "$FASTQ_DIR"/*R/ILLUMINA_DATA/ -name *"fastq.gz" | sed "s/_R[12].fastq.gz//g" | sort -n | uniq)
 do
@@ -27,7 +27,7 @@ OUTPUT_DIR=/local/projects-t3/EBMAL/mchung_dir/ESTAD/kallisto
 THREADS=4
 ```
 
-### Create counts and TPM dataframes <a name="invivohuman_countstpm"></a>
+### Create counts and TPM dataframes (2019/10/16) <a name="invivohuman_countstpm"></a>
 ```{r}
 counts.dir <- "Z:/EBMAL/mchung_dir/ESTAD/kallisto"
 output.dir <- "Z:/EBMAL/mchung_dir/ESTAD/analysis"
@@ -56,13 +56,28 @@ for(i in 1:ncol(tpm)){
   tpm[,i] <- tpm[,i]/genelength
   tpm[,i] <- tpm[,i]/(sum(tpm[,i])/1000000)
 }
+
+write.table(counts,
+            paste0(output.dir,"/human_invivo_counts.tsv"),,
+            row.names = T,
+            col.names = T,
+            quote = F,
+            sep = "\t")
+write.table(tpm,
+            paste0(output.dir,"/human_invivo_tpm.tsv"),,
+            row.names = T,
+            col.names = T,
+            quote = F,
+            sep = "\t")
 ```
 
-### Choose top candidate genes for IPA <a name="invivohuman_filtergenes"></a>
+### Choose top candidate genes for IPA (2019/10/16) <a name="invivohuman_filtergenes"></a>
 
 IPA allows only 3000 genes for core analysis. The 190,198 human transcripts in the analysis were pared down based on two criteria: (1) the transcript must have a CPM value in all samples greater than 2000 reads in the lowest sequenced sample and (2) the gene must have a log2TPM ratio value >2 or <-2 in at least one sample. After both filters are applied, the log2TPM ratio of the 2,697 genes that met both criteria were used as an input to IGV.
 
 ```{r}
+library(edgeR)
+
 cpm.cutoff <- 2000/min(colSums(counts)) * 1000000
 
 y <- DGEList(counts = counts, group = colnames(counts))
@@ -78,7 +93,7 @@ log2ratiotpm <- log2(ratiotpm)
 log2ratiotpm <- log2ratiotpm[rowSums(log2ratiotpm < -2 | log2ratiotpm > 2) > 0,]
 
 write.table(log2ratiotpm,
-            "X:/mattchung/human_invivo_log2ratiotpm.tsv",
+            paste0(output.dir,"/human_invivo_log2ratiotpm.tsv"),,
             row.names = T,
             col.names = T,
             quote = F,
