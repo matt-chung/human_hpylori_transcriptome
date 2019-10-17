@@ -1,14 +1,100 @@
 # Helicobacter-human dual-species transcriptomics in vitro and in vivo
 
 ## Table of Contents
-1. [In vivo human RNA-Seq analysis](#invivohuman)
+
+1. [Confirm cag KO in H. pylori](#confirmcagko)
+    1. [Download 4 H. pylori cagKO fastq files from the SRA](#confirmcagko_sra)
+    2. [Align H. pylori cagKO fastq files to H. pylori reference genome](#confirmcagko_align)
+    3. [Find reads that mapped to H. pylori](#confirmcagko_findhpylorireads)
+    4. [Subset fastqs to only contain H. pylori mapping reads](#confirmcagko_assemble)
+4. [In vivo human RNA-Seq analysis](#invivohuman)
     1. [Quantify human genes from in vivo RNA-Seq samples](#invivohuman_quant)
     2. [Create human counts and TPM dataframes](#invivohuman_countstpm)
     3. [Choose top candidate genes for IPA](#invivohuman_filtergenes)
+    
+## Confirm cag KO in H. pylori <a name="confirmcagko"></a>
+### Download 4 H. pylori cagKO fastq files from the SRA (2019/06/25) <a name="confirmcagko_sra"></a>
+
+```{bash, eval = F}
+while read SRR_ID
+do
+qsub -P jdhotopp-lab -l mem_free=2G -N fastq_dump -wd $output_dir -b y /usr/local/packages/sratoolkit-2.9.0/bin/fastq-dump --split-files "$SRR_ID" --gzip -O "$OUTPUT_DIR"
+done < "$SRR_ID_LIST"
+```
+
+```{bash, eval = F}
+SRR_ID_LIST=/local/projects-t3/EBMAL/mchung_dir/EHPYL/genomic_srr.list
+OUTPUT_DIR=/local/scratch/mchung
+```
+
+### Align H. pylori cagKO fastq files to H. pylori reference genome (2019/06/25) <a name="confirmcagko_align"></a>
+
+```{bash, eval = F}
+/usr/local/packages/bowtie2-2.3.4.3/bowtie2-build --large-index "$REF_FNA" "$REF_FNA"
+while read SRR
+do
+echo "/usr/local/packages/bowtie2-2.3.4.3/bowtie2 --threads "$THREADS" -x "$REF_FNA" -1 "$FASTQ_DIR"/"$SRR"_1.fastq.gz -2 "$FASTQ_DIR"/"$SRR"_2.fastq.gz | /usr/local/packages/samtools-1.9/bin/samtools view -bhSo "$OUTPUT_DIR"/"$SRR".bam -" | qsub -P jdhotopp-lab -q threaded.q  -pe thread "$THREADS" -l mem_free=5G -N bowtie2 -wd "$OUTPUT_DIR"
+done < "$SRR_LIST"
+```
+
+```{bash, eval = F}
+SRR_LIST=/local/projects-t3/EBMAL/mchung_dir/EHPYL/genomic_srr.list
+THREADS=16
+REF_FNA=/local/aberdeen2rw/julie/Matt_dir/EHPYL/references/NC_000915.1.fa
+FASTQ_DIR=/local/scratch/mchung/
+OUTPUT_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/genomic_bam
+```
+
+### Find reads that mapped to H. pylori (2019/06/25) <a name="confirmcagko_findhpylorireads"></a>
+
+```{bash, eval = F}
+for BAM in $(find "$BAM_DIR" -name "*[.]bam")
+do
+  /usr/local/packages/samtools-1.9/bin/samtools view "$BAM" | grep "$query" | cut -f1 | sort -n | uniq > "$BAM".subset.reads &
+done
+```
+
+```{bash, eval = F}
+QUERY=NC_000915.1
+BAM_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/genomic_bam
+```
+
+## Subset fastqs to only contain H. pylori mapping reads (2019/06/26) <a name="confirmcagko_makehpylorimapfastq"></a>
+
+```{bash, eval = F}
+while read SRR
+do
+echo -e "/usr/local/packages/seqtk-1.2/bin/seqtk subseq "$FASTQ_DIR"/"$SRR"_1.fastq.gz "$SUBSET_READS_LIST_DIR"/"$SRR".bam.subset.reads > "$FASTQ_DIR"/"$SRR"_1.subset.fastq" | qsub -P jdhotopp-lab -l mem_free=5G -N seqtk -wd "$FASTQ_DIR"
+echo -e "/usr/local/packages/seqtk-1.2/bin/seqtk subseq "$FASTQ_DIR"/"$SRR"_2.fastq.gz "$SUBSET_READS_LIST_DIR"/"$SRR".bam.subset.reads > "$FASTQ_DIR"/"$SRR"_2.subset.fastq" | qsub -P jdhotopp-lab -l mem_free=5G -N seqtk -wd "$FASTQ_DIR"
+done < "$SRR_LIST"
+```
+
+```{bash, eval = F}
+FASTQ_DIR=/local/scratch/mchung
+SUBSET_READS_LIST_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/genomic_bam
+SRR_LIST=/local/projects-t3/EBMAL/mchung_dir/EHPYL/genomic_srr.list
+```
+
+## Assemble H. pylori genomes using H. pylori-mapped fastqs (2019/06/26) <a name="confirmcagko_assemble"></a>
+
+```{bash, eval = F}
+while read SRR
+do
+mkdir "$OUTPUT_DIR"/"$SRR"
+qsub -q threaded.q  -pe thread "$THREADS" -P jdhotopp-lab -l mem_free=20G -N spades -wd "$OUTPUT_DIR" -b y /usr/local/packages/spades-3.13.0/bin/spades.py -1 "$FASTQ_DIR"/"$SRR"_1.subset.fastq -2 "$FASTQ_DIR"/"$SRR"_2.subset.fastq -o "$OUTPUT_DIR"/"$SRR"
+done < "$SRR_LIST"
+```
+
+```{bash, eval = F}
+SRR_LIST=/local/projects-t3/EBMAL/mchung_dir/EHPYL/genomic_srr.list
+THREADS=16
+FASTQ_DIR=/local/scratch/mchung/
+OUTPUT_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/genomic_spades
+```
 
 ## In vivo human RNA-Seq analysis <a name="invivohuman"></a>
 ### Quantify human genes from in vivo RNA-Seq samples (2019/10/14) <a name="invivohuman_quant"></a>
-```{bash}
+```{bash, eval = F}
 for FASTQ in $(find "$FASTQ_DIR"/*R/ILLUMINA_DATA/ -name *"fastq.gz" | sed "s/_R[12].fastq.gz//g" | sort -n | uniq)
 do
 
@@ -20,7 +106,7 @@ do
 done
 ```
 
-```{bash}
+```{bash, eval = F}
 NUC_TRANSCRIPT_FNA=/local/aberdeen2rw/julie/Matt_dir/EHPYL/references/combined_hsapiensGRCh38_hpylori26695.cds.fna
 FASTQ_DIR=/local/aberdeen2ro/ESTAD
 OUTPUT_DIR=/local/projects-t3/EBMAL/mchung_dir/ESTAD/kallisto
@@ -58,13 +144,13 @@ for(i in 1:ncol(tpm)){
 }
 
 write.table(counts,
-            paste0(output.dir,"/human_invivo_counts.tsv"),,
+            paste0(output.dir,"/human_invivo_counts.tsv"),
             row.names = T,
             col.names = T,
             quote = F,
             sep = "\t")
 write.table(tpm,
-            paste0(output.dir,"/human_invivo_tpm.tsv"),,
+            paste0(output.dir,"/human_invivo_tpm.tsv"),
             row.names = T,
             col.names = T,
             quote = F,
