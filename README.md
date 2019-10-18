@@ -186,3 +186,143 @@ write.table(log2ratiotpm,
             sep = "\t")
 ```
 
+---
+title: "Untitled"
+author: "Matthew Chung"
+date: "October 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+output.dir <- "Z:/EBMAL/mchung_dir/ESTAD/analysis"
+```
+
+## R Markdown
+
+
+```{r,fig.height=2,fig.width=7}
+require(ggplot2)
+require(gridExtra)
+g_legend<-function(a.gplot){ 
+  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+  legend <- tmp$grobs[[leg]] 
+  return(legend)
+} 
+
+hmcol <- colorRampPalette(c("navyblue","white","firebrick3"))(20)
+
+hmcolkey.plot <- ggplot() + 
+  geom_raster(aes(x=seq(-5,5,0.5), y=seq(-5,5,0.5), fill = seq(-5,5,0.5)))+
+  scale_fill_gradientn(name = "activation z-score",
+                       colours=hmcol,
+                       breaks=c(-5,0,5))+
+  theme(legend.position="bottom")+
+  guides(fill = guide_colorbar(title.position = "top"))
+  
+
+heat.legend <- g_legend(hmcolkey.plot)
+pdf(paste0(output.dir,"/hmcolorkey.pdf"),
+    height=2,
+    width=7)
+grid.arrange(heat.legend)
+dev.off()
+```
+
+```{r,fig.height=7,fig.width=4}
+require(gplots)
+require(varhandle)
+
+canonicalpathway.raw.path <- "Z:/EBMAL/mchung_dir/ESTAD/analysis/comparison_canonicalpathway.txt"
+canonicalpathway.raw <- read.delim(canonicalpathway.raw.path,
+                                   comment.char = "Â",
+                                   header = F,
+                                   col.names = seq(1,5))
+canonicalpathway <- canonicalpathway.raw
+rownames(canonicalpathway) <- canonicalpathway[,1]
+colnames(canonicalpathway) <- unfactor(canonicalpathway[1,])
+canonicalpathway <- canonicalpathway[-1,-1]
+canonicalpathway <- apply(canonicalpathway,c(1,2),function(x){as.numeric(as.character(x))})
+
+canonicalpathway <- canonicalpathway[1:30,]
+
+pdf(paste0(output.dir,"/hm_canonicalpathway.pdf"),
+    height=7,
+    width=4)
+heatmap.2(as.matrix(canonicalpathway),
+          col=hmcol,
+          trace="none",
+          Rowv = F,
+          Colv = F,
+          lwid=c(1,4),
+          lhei = c(1,5),
+          breaks = seq(-5,5,by=.5),
+          dendrogram = "none")
+dev.off()
+```
+
+```{r,fig.height=11,fig.width=4}
+require(gplots)
+diseasesfunction.raw.path <- "Z:/EBMAL/mchung_dir/ESTAD/analysis/comparison_diseasesfunctions.txt"
+diseasesfunction.raw <- read.delim(diseasesfunction.raw.path,
+                                   comment.char = "Â",
+                                   header = F,
+                                   col.names = seq(1,5))
+diseasesfunction <- diseasesfunction.raw
+rownames(diseasesfunction) <- diseasesfunction[,1]
+colnames(diseasesfunction) <- unfactor(diseasesfunction[1,])
+diseasesfunction <- diseasesfunction[-1,-1]
+diseasesfunction <- apply(diseasesfunction,c(1,2),function(x){as.numeric(as.character(x))})
+
+diseasesfunction <- diseasesfunction[1:30,]
+
+hmcol <- colorRampPalette(c("navyblue","white","firebrick3"))(20)
+
+pdf(paste0(output.dir,"/hm_diseasesfunction.pdf"),
+    height=7,
+    width=4)
+heatmap.2(as.matrix(diseasesfunction),
+          col=hmcol,
+          trace="none",
+          Rowv = F,
+          Colv = F,
+          lwid=c(1,4),
+          lhei = c(1,5),
+          breaks = seq(-5,5,by=.5),
+          dendrogram = "none")
+dev.off()
+```
+
+```{r,fig.height=7,fig.width=4}
+require(gplots)
+upstreamanalysis.raw.path <- "Z:/EBMAL/mchung_dir/ESTAD/analysis/comparison_upstreamanalysis.txt"
+upstreamanalysis.raw <- read.delim(upstreamanalysis.raw.path,
+                                   comment.char = "Â",
+                                   header = F,
+                                   col.names = seq(1,5))
+upstreamanalysis <- upstreamanalysis.raw
+rownames(upstreamanalysis) <- upstreamanalysis[,1]
+colnames(upstreamanalysis) <- unfactor(upstreamanalysis[1,])
+upstreamanalysis <- upstreamanalysis[-1,-1]
+upstreamanalysis <- apply(upstreamanalysis,c(1,2),function(x){as.numeric(as.character(x))})
+
+upstreamanalysis <- upstreamanalysis[1:30,]
+
+hmcol <- colorRampPalette(c("navyblue","white","firebrick3"))(20)
+
+pdf(paste0(output.dir,"/hm_upstreamanalysis.pdf"),
+    height=7,
+    width=4)
+heatmap.2(as.matrix(upstreamanalysis),
+          col=hmcol,
+          trace="none",
+          Rowv = F,
+          Colv = F,
+          lwid=c(1,4),
+          lhei = c(1,5),
+          breaks = seq(-5,5,by=.5),
+          dendrogram = "none")
+dev.off()
+```
+
