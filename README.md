@@ -7,7 +7,7 @@
     2. [Align H. pylori cagKO fastq files to H. pylori reference genome](#confirmcagko_align)
     3. [Find reads that mapped to H. pylori](#confirmcagko_findhpylorireads)
     4. [Subset fastqs to only contain H. pylori mapping reads](#confirmcagko_assemble)
-4. [In vivo human RNA-Seq analysis](#invivohuman)
+2. [In vivo human RNA-Seq analysis](#invivohuman)
     1. [Quantify human genes from in vivo RNA-Seq samples](#invivohuman_quant)
     2. [Create human counts and TPM dataframes](#invivohuman_countstpm)
     3. [Choose top candidate genes for IPA](#invivohuman_filtergenes)
