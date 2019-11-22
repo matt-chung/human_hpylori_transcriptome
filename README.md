@@ -1,39 +1,75 @@
 # Helicobacter-human dual-species transcriptomics in vitro and in vivo
 
-## Table of Contents
+# Table of Contents
 
-1. [Confirm cag KO in H. pylori](#confirmcagko)
+1. [Pre-analysis setup](#preanalysis)
+    1. [Set bash software paths](#preanalysis_bashsoftware)
+2. [Confirm cag KO in H. pylori](#confirmcagko)
     1. [Download 4 H. pylori cagKO fastq files from the SRA](#confirmcagko_sra)
     2. [Align H. pylori cagKO fastq files to H. pylori reference genome](#confirmcagko_align)
     3. [Find reads that mapped to H. pylori](#confirmcagko_findhpylorireads)
     4. [Subset fastqs to only contain H. pylori mapping reads](#confirmcagko_assemble)
-2. [In vivo human RNA-Seq analysis](#invivohuman)
+3. [In vivo human RNA-Seq analysis](#invivohuman)
     1. [Quantify human genes from in vivo RNA-Seq samples](#invivohuman_quant)
     2. [Create human counts and TPM dataframes](#invivohuman_countstpm)
     3. [Choose top candidate genes for IPA](#invivohuman_filtergenes)
     
-## Confirm cag KO in H. pylori <a name="confirmcagko"></a>
-### Download 4 H. pylori cagKO fastq files from the SRA (2019/06/25) <a name="confirmcagko_sra"></a>
+
+# Pre-analysis <a name="preanalysis"></a>
+## Set project-wide bash software and directory paths <a name="preanalysis_bashsoftware"></a>
 
 ```{bash, eval = F}
-while read SRR_ID
-do
-qsub -P jdhotopp-lab -l mem_free=2G -N fastq_dump -wd $output_dir -b y /usr/local/packages/sratoolkit-2.9.0/bin/fastq-dump --split-files "$SRR_ID" --gzip -O "$OUTPUT_DIR"
-done < "$SRR_ID_LIST"
+THREADS=4
+
+BOWTIE2_BIN_DIR=/usr/local/packages/bowtie2-2.3.4.3
+KALLISTO_BIN_DIR=/usr/local/packages/kallisto-0.45.0
+SAMTOOLS_BIN_DIR=/usr/local/packages/samtools-1.9/bin
+SRATOOLKIT_BIN_DIR=/usr/local/packages/sratoolkit-2.9.0/bin
+
+REFERENCES_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/references/
 ```
+
+## Download references and create combined human-H. pylori reference <a name="preanalysis_references"></a>
+
+```{bash, eval = F}
+wget -O "$REFERENCES_DIR"/hpylori26995.fna.gz ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/525/GCF_000008525.1_ASM852v1/GCF_000008525.1_ASM852v1_genomic.fna.gz
+wget -O "$REFERENCES_DIR"/hsapiensGRCh38.fna.gz ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.26_GRCh38/GCF_000001405.26_GRCh38_genomic.fna.gz
+gunzip "$REFERENCES_DIR"/hpylori26995.fna.gz
+gunzip "$REFERENCES_DIR"/hsapiensGRCh38.fna.gz
+cat "$REFERENCES_DIR"/hpylori26995.fna "$REFERENCES_DIR"/hsapiensGRCh38.fna > "$REFERENCES_DIR"/combined_hsapiensGRCh38_hpylori26695.fna
+
+
+```
+
+
+# Confirm cag KO in H. pylori <a name="confirmcagko"></a>
+## Set bash input and directory paths <a name="confirmcagko_setpaths"></a>
 
 ```{bash, eval = F}
 SRR_ID_LIST=/local/projects-t3/EBMAL/mchung_dir/EHPYL/genomic_srr.list
-OUTPUT_DIR=/local/scratch/mchung
+READS_DIR=/local/scratch/mchung
+REFERENCES_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/references/
+OUTPUT_DIR=
+```
+
+
+### Download 4 H. pylori cagKO fastq files from the SRA (2019-06-25) <a name="confirmcagko_sra"></a>
+
+#### Commands:
+```{bash, eval = F}
+while read SRR_ID
+do
+  qsub -P jdhotopp-lab -l mem_free=2G -N fastq_dump -wd "$READS_DIR" -b y "$SRATOOLKIT_BIN_DIR"/fastq-dump --split-files "$SRR_ID" --gzip -O "$READS_DIR"
+done < "$SRR_ID_LIST"
 ```
 
 ### Align H. pylori cagKO fastq files to H. pylori reference genome (2019/06/25) <a name="confirmcagko_align"></a>
 
 ```{bash, eval = F}
-/usr/local/packages/bowtie2-2.3.4.3/bowtie2-build --large-index "$REF_FNA" "$REF_FNA"
+"$BOWTIE2_BIN_DIR"/bowtie2-build --large-index "$REF_FNA" "$REF_FNA"
 while read SRR
 do
-echo "/usr/local/packages/bowtie2-2.3.4.3/bowtie2 --threads "$THREADS" -x "$REF_FNA" -1 "$FASTQ_DIR"/"$SRR"_1.fastq.gz -2 "$FASTQ_DIR"/"$SRR"_2.fastq.gz | /usr/local/packages/samtools-1.9/bin/samtools view -bhSo "$OUTPUT_DIR"/"$SRR".bam -" | qsub -P jdhotopp-lab -q threaded.q  -pe thread "$THREADS" -l mem_free=5G -N bowtie2 -wd "$OUTPUT_DIR"
+echo ""$BOWTIE2_BIN_DIR"/bowtie2 --threads "$THREADS" -x "$REF_FNA" -1 "$READS_DIR"/"$SRR"_1.fastq.gz -2 "$READS_DIR"/"$SRR"_2.fastq.gz | "$SAMTOOLS_BIN_DIR"/samtools view -bhSo "$OUTPUT_DIR"/"$SRR".bam -" | qsub -P jdhotopp-lab -q threaded.q  -pe thread "$THREADS" -l mem_free=5G -N bowtie2 -wd "$OUTPUT_DIR"
 done < "$SRR_LIST"
 ```
 
@@ -50,7 +86,7 @@ OUTPUT_DIR=/local/aberdeen2rw/julie/Matt_dir/EHPYL/genomic_bam
 ```{bash, eval = F}
 for BAM in $(find "$BAM_DIR" -name "*[.]bam")
 do
-  /usr/local/packages/samtools-1.9/bin/samtools view "$BAM" | grep "$query" | cut -f1 | sort -n | uniq > "$BAM".subset.reads &
+  "$SAMTOOLS_BIN_DIR"/samtools view "$BAM" | grep "$query" | cut -f1 | sort -n | uniq > "$BAM".subset.reads &
 done
 ```
 
@@ -101,7 +137,7 @@ do
   SAMPLE="$(echo "$(dirname "$FASTQ")" | sed "s/\\/ILLUMINA_DATA.*//g" | sed "s/.*\\///g")"
   mkdir "$OUTPUT_DIR"/"$SAMPLE"
   
-  echo -e "qsub -q threaded.q  -pe thread "$THREADS" -P jdhotopp-lab -l mem_free=5G -N kallisto -wd "$OUTPUT_DIR"/"$SAMPLE" -b y /usr/local/packages/kallisto-0.45.0/kallisto quant -t "$THREADS" -i "$NUC_TRANSCRIPT_FNA".kallisto.index -o "$OUTPUT_DIR"/"$SAMPLE"/"$(basename "$FASTQ")" "$FASTQ"_R1.fastq.gz "$FASTQ"_R2.fastq.gz"
+  echo -e "qsub -q threaded.q  -pe thread "$THREADS" -P jdhotopp-lab -l mem_free=5G -N kallisto -wd "$OUTPUT_DIR"/"$SAMPLE" -b y "$KALLISTO_BIN_DIR"/kallisto quant -t "$THREADS" -i "$NUC_TRANSCRIPT_FNA".kallisto.index -o "$OUTPUT_DIR"/"$SAMPLE"/"$(basename "$FASTQ")" "$FASTQ"_R1.fastq.gz "$FASTQ"_R2.fastq.gz"
   
 done
 ```
