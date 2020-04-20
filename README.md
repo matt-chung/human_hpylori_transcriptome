@@ -143,7 +143,7 @@ done
 ```
 
 ```{bash, eval = F}
-NUC_TRANSCRIPT_FNA=/local/aberdeen2rw/julie/Matt_dir/EHPYL/references/combined_hsapiensGRCh38_hpylori26695.cds.fna
+NUC_TRANSCRIPT_FNA=/local/aberdesen2rw/julie/Matt_dir/EHPYL/references/combined_hsapiensGRCh38_hpylori26695.cds.fna
 FASTQ_DIR=/local/aberdeen2ro/ESTAD
 OUTPUT_DIR=/local/projects-t3/EBMAL/mchung_dir/ESTAD/kallisto
 THREADS=4
@@ -215,7 +215,7 @@ log2ratiotpm <- log2(ratiotpm)
 log2ratiotpm <- log2ratiotpm[rowSums(log2ratiotpm < -2 | log2ratiotpm > 2) > 0,]
 
 write.table(log2ratiotpm,
-            paste0(output.dir,"/human_invivo_log2ratiotpm.tsv"),,
+            paste0(output.dir,"/human_invivo_log2ratiotpm.tsv"),
             row.names = T,
             col.names = T,
             quote = F,
