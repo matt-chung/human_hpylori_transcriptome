@@ -1720,6 +1720,7 @@ print(dendrogram.plot)
 ```
 
 ![image](/images/hpylori_tpm_kept_dendrogram.png)
+
 ##### Conduct a PCA on the TPM values of all genes that passed CPM cutoff
 
 ```{R,fig.height=5,fig.width=5}
@@ -1728,7 +1729,7 @@ pca.df <- pca.df[rowSums(pca.df == 0) != ncol(pca.df),]
 pca <- PCA(as.data.frame(scale(t(pca.df))), graph = FALSE, ncp = ncol(tpm.keep) - 1)
 
 pca.plot <- ggplot()+
-  geom_point(aes(x=pca$ind$coord[,1], y=pca$ind$coord[,2], color = groups[,2],size = 1, shape = dendroshape))+
+  geom_point(aes(x=pca$ind$coord[,1], y=pca$ind$coord[,2], color = groups[,2],size = 1, shape = groups[,4]))+
   labs(col = "Samples", size = "Reads Mapped\nto Features", 
 	 x = paste0("PC1 (", round(pca$eig[1,2],1), "%)"), 
 	 y = paste0("PC2 (", round(pca$eig[2,2],1), "%)"))+
@@ -1755,7 +1756,6 @@ print(pca.plot)
 ```
 
 ![image](/images/hpylori_tpm_kept_pca.png)
-
 
 #### Divide differentially expressed genes into expression modules
 
@@ -2941,7 +2941,7 @@ pca.df <- pca.df[rowSums(pca.df == 0) != ncol(pca.df),]
 pca <- PCA(as.data.frame(scale(t(pca.df))), graph = FALSE, ncp = ncol(tpm.keep) - 1)
 
 pca.plot <- ggplot()+
-  geom_point(aes(x=pca$ind$coord[,1], y=pca$ind$coord[,2], color = groups[,2],size = 1, shape = dendroshape))+
+  geom_point(aes(x=pca$ind$coord[,1], y=pca$ind$coord[,2], color = groups[,2],size = 1, shape = groups[,4]))+
   labs(col = "Samples", size = "Reads Mapped\nto Features", 
 	 x = paste0("PC1 (", round(pca$eig[1,2],1), "%)"), 
 	 y = paste0("PC2 (", round(pca$eig[2,2],1), "%)"))+
