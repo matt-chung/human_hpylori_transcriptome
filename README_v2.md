@@ -83,7 +83,6 @@
 			- [Divide differentially expressed genes into expression modules](#divide-differentially-expressed-genes-into-expression-modules)
 			- [Plot a heatmap of the module containing the cag pathogenicity genes](#plot-a-heatmap-of-the-module-containing-the-cag-pathogenicity-genes)
 			- [Plot a heatmap of the module containing the genes that differ because of SNPs/INDELs](#plot-a-heatmap-of-the-module-containing-the-genes-that-differ-because-of-snpsindels)
-			- [Test each module partition for over-represented functional terms](#test-each-module-partition-for-over-represented-functional-terms)
 		- [Human](#human-2)
 			- [Set R inputs](#set-r-inputs-3)
 			- [Load R functions](#load-r-functions-1)
@@ -97,7 +96,7 @@
 			- [Conduct PCA and hierarchical clustering analyses on genes that passed the CPM cutoff](#conduct-pca-and-hierarchical-clustering-analyses-on-genes-that-passed-the-cpm-cutoff-1)
 			- [Divide differentially expressed genes into expression modules](#divide-differentially-expressed-genes-into-expression-modules-1)
 			- [Create a list of genes and their logFC and FDR values for each WGCNA module as IPA inputs](#create-a-list-of-genes-and-their-logfc-and-fdr-values-for-each-wgcna-module-as-ipa-inputs)
-	- [Combine darkorange F + pink T and darkorange T + pink F module gene lists for WGCNA analyses due to their similar expression patterns](#combine-darkorange-f--pink-t-and-darkorange-t--pink-f-module-gene-lists-for-wgcna-analyses-due-to-their-similar-expression-patterns)
+	- [Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns](#combine-cyan-f--darkred-t-and-cyan-t--darkred-f-module-gene-lists-for-wgcna-analyses-due-to-their-similar-expression-patterns)
 	- [Assess whether excluding 24 h samples for humans allows other clusters to be resolved](#assess-whether-excluding-24-h-samples-for-humans-allows-other-clusters-to-be-resolved)
 		- [Set R inputs](#set-r-inputs-4)
 		- [Load R functions](#load-r-functions-2)
@@ -2127,12 +2126,17 @@ heatmap.2(as.matrix(zscore.log2tpm.de),
 ```{R}
 module <- "darkslateblue"
 
-zscore.log2tpm.cag <- zscore.log2tpm.de[which(rowcol1 == module),]
-
 gff3_map <- read.delim(GFF3_MAP.PATH, comment.char = "#", header = T)
 gff3_map$old_locus_tag <- gsub("%2C.*","",gff3_map$old_locus_tag)
 
-labrow <- paste0(rownames(zscore.log2tpm.cag),": ", gff3_map$product[gff3_map$old_locus_tag %in% rownames(zscore.log2tpm.cag)])
+zscore.log2tpm.cag <- zscore.log2tpm.de[intersect(which(rowcol1 == module),which(rowcol2 == "grey")),]
+labrow1 <- paste0(rownames(zscore.log2tpm.cag),": ", gff3_map$product[which(gff3_map$old_locus_tag %in% rownames(zscore.log2tpm.cag))])
+
+zscore.log2tpm.cag <- zscore.log2tpm.de[intersect(which(rowcol1 == module),which(rowcol2 == "black")),]
+labrow2 <- paste0(rownames(zscore.log2tpm.cag),": ", gff3_map$product[which(gff3_map$old_locus_tag %in% rownames(zscore.log2tpm.cag))])
+
+zscore.log2tpm.cag <- zscore.log2tpm.de[rowcol1 == module,]
+labrow <- c(labrow1,labrow2)
 ```
 
 ###### Use module assigments as the row color bar
@@ -2371,37 +2375,6 @@ heatmap.2(as.matrix(zscore.log2tpm.snpindel),
 		  colsep = colsep,
 		  dendrogram = "none")
 ```
-
-![image](/images/hpylori_tpm_de_wgcna_zscorelog2tpm_snpindelinvert_heatmap.png)
-
-#### Test each module partition for over-represented functional terms
-
-```{R}
-geneinfo <- read.delim(GENEINFO.PATH)
-
-terms.colnames <- c("term","clusteroccurences","genomeoccurences","pvalue","correctedpvalue","oddsratio","module","invert")
-
-terms.wgcna <- as.data.frame(matrix(nrow = 0,
-						 ncol = 8))
-colnames(terms.wgcna) <- terms.colnames
-for(j in 1:length(unique(tpm.de.wgcna$module))){
-  terms.wgcna.f <- as.data.frame(cbind(functionaltermenrichment(rownames(tpm.de.wgcna)[tpm.de.wgcna$module == unique(tpm.de.wgcna$module)[j] & tpm.de.wgcna$invert == F],geneinfo),unique(tpm.de.wgcna$module)[j],F))
-  terms.wgcna.t <- as.data.frame(cbind(functionaltermenrichment(rownames(tpm.de.wgcna)[tpm.de.wgcna$module == unique(tpm.de.wgcna$module)[j] & tpm.de.wgcna$invert == T],geneinfo),unique(tpm.de.wgcna$module)[j],T))
-  
-  colnames(terms.wgcna.f) <- terms.colnames
-  colnames(terms.wgcna.t) <- terms.colnames
-  terms.wgcna <- as.data.frame(rbind(terms.wgcna,
-						 terms.wgcna.f, 
-						 terms.wgcna.t))
-}
-write.table(terms.wgcna,
-		paste0(WORKING.DIR,"/hpylori_functionalterms_wgcna.tsv"),
-		quote = F,
-		col.names = T,
-		row.names = F,
-		sep = "\t")
-```
-
 
 ### Human
 
@@ -3378,14 +3351,14 @@ for(i in 1:length(unique(rowcol1))){
 }
 ```
 
-## Combine darkorange F + pink T and darkorange T + pink F module gene lists for WGCNA analyses due to their similar expression patterns
+## Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns
 
 The individual files were concatenated together and the second header was manually removed.
 
 ##### Commands
 ```{bash, eval = F}
-cat "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkorangeF.tsv "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_pinkT.tsv > "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkorangeF_pinkT.tsv
-cat "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkorangeT.tsv "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_pinkF.tsv > "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkorangeT_pinkF.tsv
+cat "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_cyanF.tsv "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkredT.tsv > "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_cyanF_darkredT.tsv
+cat "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_cyanT.tsv "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_darkredF.tsv > "$WORKING_DIR"/human_edgeR_longitudinal_wgcna_cyanT_darkredF.tsv
 ```
 
 ## Assess whether excluding 24 h samples for humans allows other clusters to be resolved
