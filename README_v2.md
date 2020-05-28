@@ -564,7 +564,6 @@ AV_INPUT="$WORKING_DIR"/varscan/genomic.filtered.avinput
 
 ## Create a summary table for all SNPs/INDELs with functional consequences
 
-
 ### Set R inputs
 ```{R}
 ANNOVAR_OUTPUT.PATH <- "Z:/EBMAL/mchung_dir/EHPYL/annovar/annovar.exonic_variant_function"
@@ -578,21 +577,21 @@ sessionInfo()
 ```
 
 ```{R, eval = F}
-R version 3.5.0 (2018-04-23)
+R version 4.0.0 (2020-04-24)
 Platform: x86_64-w64-mingw32/x64 (64-bit)
-Running under: Windows >= 8 x64 (build 9200)
+Running under: Windows 10 x64 (build 18362)
 
 Matrix products: default
 
 locale:
 [1] LC_COLLATE=English_United States.1252  LC_CTYPE=English_United States.1252    LC_MONETARY=English_United States.1252
-[4] LC_NUMERIC=C				   LC_TIME=English_United States.1252    
+[4] LC_NUMERIC=C                           LC_TIME=English_United States.1252    
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 loaded via a namespace (and not attached):
-[1] compiler_3.5.0 tools_3.5.0    yaml_2.2.
+[1] compiler_4.0.0 tools_4.0.0    knitr_1.28     xfun_0.14  
 ```
 
 ### Change start positions in VCF to match the ANNOVAR output format
@@ -624,14 +623,14 @@ table(annovar_output[,2])
 ```
 
 ```{R, eval = F}
- frameshift deletion frameshift insertion    nonsynonymous SNV		 stopgain	 synonymous SNV		  unknown 
-			 3			  1			  0			  1			  2			  0
+ frameshift deletion frameshift insertion    nonsynonymous SNV             stopgain       synonymous SNV              unknown 
+                   3                    1                   23                    1                    2                    6 
 ```
 
 ### Create a summary table for all SNPs/INDELs that cause functional changes
 
 ```{R}
-annovar_output <- annovar_output[annovar_output[,2] != "nonsynonymous SNV" & annovar_output[,2] != "unknown",]
+annovar_output <- annovar_output[annovar_output[,2] != "synonymous SNV" & annovar_output[,2] != "unknown",]
 
 gff_map <- read.delim(GFF_MAP.PATH)
 gff_map <- gff_map[match(gsub(":.*","",annovar_output[,3]),gsub("gene-","",gsub("[|].*","",gff_map$ID))),]
@@ -652,22 +651,64 @@ print(annovar_functionalinfo)
 ```
 
 ```{R, eval = F}
-     gene_id	  mutation_type   start    stop ref alt old_locus_tag						 product SRR5410345
-1 HP_RS02780		 stopgain  597715  597715   G   A	  HP0565				 YkgB family protein	 100%
-2 HP_RS03230	 synonymous SNV  703308  703308   C   A	  HP0655 outer membrane protein assembly factor BamA	   0%
-3 HP_RS03300 frameshift insertion  721378  721378   -   A	  HP0671			    outer membrane protein	   0%
-4 HP_RS04245  frameshift deletion  922126  922127  TA   -	  HP0870		     flagellar hook protein FlgE     96.61%
-5 HP_RS04335  frameshift deletion  943757  943757   G   -	  HP0889		   iron ABC transporter permease	   0%
-6 HP_RS07010  frameshift deletion 1487681 1487682  GA   -	    <NA>		 phosphoethanolamine transferase	75.3%
-7 HP_RS07365	 synonymous SNV 1559723 1559723   G   A	  HP1487			  ABC transporter permease	   0%
-  SRR5410346 SRR7191641 SRR7191642
-1	 100%	   0%	   0%
-2	   0%	 100%	 100%
-3	   0%     97.44%     97.54%
-4     97.24%	   0%	   0%
-5	   0%     98.48%     97.95%
-6     77.23%     10.37%	4.93%
-7	   0%     99.54%	 100%
+      gene_id        mutation_type   start    stop ref alt old_locus_tag                                       product SRR5410345 SRR5410346
+1  HP_RS00125    nonsynonymous SNV   20792   20792   C   T        HP0021                    lipid A 1-phosphatase LpxE         0%         0%
+2  HP_RS00125    nonsynonymous SNV   20966   20966   C   T        HP0021                    lipid A 1-phosphatase LpxE       100%     99.54%
+3  HP_RS00170    nonsynonymous SNV   32115   32115   A   G        HP0031                      universal stress protein         0%         0%
+4  HP_RS00610    nonsynonymous SNV  132171  132171   T   C        HP0120                         DUF874 family protein         0%      0.36%
+5  HP_RS00860    nonsynonymous SNV  183646  183646   C   T        HP0176 class II fructose-1%2C6-bisphosphate aldolase         0%         0%
+6  HP_RS01380    nonsynonymous SNV  288598  288598   G   T        HP0280  lipid A biosynthesis lauroyl acyltransferase         0%         0%
+7  HP_RS01425    nonsynonymous SNV  302381  302381   C   A        HP0289 immunomodulatory autotransporter protein ImaA       100%       100%
+8  HP_RS02330    nonsynonymous SNV  493675  493675   C   T        HP0471                      cation:proton antiporter       100%       100%
+9  HP_RS02710    nonsynonymous SNV  585812  585812   G   A        HP0550          transcription termination factor Rho         0%         0%
+10 HP_RS02730    nonsynonymous SNV  589026  589026   C   T        HP0554                          hypothetical protein       100%       100%
+11 HP_RS02780    nonsynonymous SNV  597516  597516   G   T        HP0565                           YkgB family protein         0%         0%
+12 HP_RS02780             stopgain  597715  597715   G   A        HP0565                           YkgB family protein       100%       100%
+13 HP_RS02975    nonsynonymous SNV  639909  639909   G   T        HP0603                          hypothetical protein         0%         0%
+14 HP_RS03300 frameshift insertion  721378  721378   -   A        HP0671                        outer membrane protein         0%         0%
+15 HP_RS03625    nonsynonymous SNV  798981  798981   G   A          <NA>              DUF697 domain-containing protein         0%         0%
+16 HP_RS03760    nonsynonymous SNV  825149  825149   C   A        HP0772            N-acetylmuramoyl-L-alanine amidase         0%         0%
+17 HP_RS03845    nonsynonymous SNV  845782  845782   C   T        HP0790            restriction endonuclease subunit S       100%       100%
+18 HP_RS04245  frameshift deletion  922126  922127  TA   -        HP0870                   flagellar hook protein FlgE     96.61%     97.24%
+19 HP_RS04330    nonsynonymous SNV  943011  943011   G   A        HP0888           ABC transporter ATP-binding protein       100%       100%
+20 HP_RS04335  frameshift deletion  943757  943757   G   -        HP0889                 iron ABC transporter permease         0%         0%
+21 HP_RS04355    nonsynonymous SNV  946068  946068   T   C        HP0893      type II toxin-antitoxin system antitoxin         0%         0%
+22 HP_RS04965    nonsynonymous SNV 1074152 1074152   G   T        HP1010          RNA degradosome polyphosphate kinase         0%         0%
+23 HP_RS05150    nonsynonymous SNV 1112616 1112616   C   G        HP1048            translation initiation factor IF-2       100%       100%
+24 HP_RS06480    nonsynonymous SNV 1377273 1377273   G   A        HP1313                      30S ribosomal protein S3         0%         0%
+25 HP_RS06665    nonsynonymous SNV 1410638 1410638   G   A        HP1350                          S41 family peptidase         0%         0%
+26 HP_RS06780    nonsynonymous SNV 1437811 1437811   C   G        HP1373                 rod shape-determining protein       100%       100%
+27 HP_RS07010  frameshift deletion 1487681 1487682  GA   -          <NA>               phosphoethanolamine transferase      75.3%     77.23%
+28 HP_RS07635    nonsynonymous SNV 1623481 1623481   C   A        HP1544                   M23 family metallopeptidase         0%         0%
+   SRR7191641 SRR7191642
+1        100%       100%
+2       0.52%         0%
+3        100%       100%
+4        100%       100%
+5        100%       100%
+6        100%       100%
+7          0%         0%
+8          0%         0%
+9        100%       100%
+10         0%         0%
+11       100%       100%
+12         0%         0%
+13       100%       100%
+14     97.44%     97.54%
+15       100%       100%
+16     99.21%       100%
+17         0%         0%
+18         0%         0%
+19      0.58%         0%
+20     98.48%     97.95%
+21       100%       100%
+22       100%       100%
+23         0%         0%
+24       100%       100%
+25     98.86%       100%
+26         0%         0%
+27     10.37%      4.93%
+28       100%       100%
 ```
 
 # Conduct in vitro H. pylori and human RNA-Seq analysis
