@@ -3499,7 +3499,7 @@ heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
 		  dendrogram = "none")
 ```
 
-![image](/images/human_selectgenes_zscorelog2tpm_module_heatmap.png)
+![image](/images/human_tpm_selectgenes_zscorelog2tpm_module_heatmap.png)
 
 ##### Use inverse assigments as the row color bar
 
@@ -3575,7 +3575,7 @@ heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
 		  dendrogram = "none")
 ```
 
-![image](/images/human_selectgenes_zscorelog2tpm_invert_heatmap.png)
+![image](/images/human_tpm_selectgenes_zscorelog2tpm_module_heatmap.png)
 
 ## Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns
 
