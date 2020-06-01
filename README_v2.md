@@ -3421,11 +3421,51 @@ genes <- as.data.frame(rbind(c("ENST00000307407.8","IL-8","protein_coding"),
                              c("ENST00000493758.5","ITGB1","protein_coding")
 ))
 ```
+##### Identifies average rank in expression of genes of interest
+
+The closer to 0, the more the gene is expressed.
+
+```{R}
+rank <- counts
+for(i in 1:ncol(rank)){
+  rank[,i] <- rank(-counts[,i])
+}
+
+avgrank <- rowMeans(rank)
+
+for(i in 1:nrow(genes)){
+  print(paste(genes[i,1],
+              round(avgrank[which(rownames(rank) == genes[i,1])]/max(avgrank)*100,2),
+              sep = "         "))
+}
+```
+
+```{R, eval = F}
+[1] "ENST00000307407.8         16.14"
+[1] "ENST00000401931.1         52.76"
+[1] "ENST00000293379.9         1.58"
+[1] "ENST00000547197.1         65.49"
+[1] "ENST00000396033.6         65.31"
+[1] "ENST00000302278.8         0.32"
+[1] "ENST00000423113.5         82.49"
+[1] "ENST00000488427.1         92.63"
+[1] "ENST00000474568.5         40.24"
+[1] "ENST00000472147.1         93.22"
+[1] "ENST00000480226.5         84.17"
+[1] "ENST00000417122.6         58.97"
+[1] "ENST00000534049.5         96.97"
+[1] "ENST00000475184.5         100"
+[1] "ENST00000528877.5         100"
+[1] "ENST00000488494.5         87.05"
+[1] "ENST00000414670.2         80.04"
+[1] "ENST00000437302.5         70.11"
+[1] "ENST00000493758.5         97.01"
+```
 
 ##### Use module assigments as the row color bar
 
 ```{R,fig.height = 5, fig.width = 5}
-tpm.selectgenes <- tpm[rownames(tpm) %in% genes[,1],]
+tpm.selectgenes <- tpm[match(genes[,1],rownames(tpm)),]
 log2tpm.selectgenes <- log2(tpm.selectgenes+1)
 zscore.log2tpm.selectgenes <- as.data.frame(t(scale(t(log2tpm.selectgenes))))
 
@@ -3575,7 +3615,7 @@ heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
 		  dendrogram = "none")
 ```
 
-![image](/images/human_tpm_selectgenes_zscorelog2tpm_module_heatmap.png)
+![image](/images/human_tpm_selectgenes_zscorelog2tpm_invert_heatmap.png)
 
 ## Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns
 
