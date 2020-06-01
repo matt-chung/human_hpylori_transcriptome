@@ -96,6 +96,7 @@
 			- [Conduct PCA and hierarchical clustering analyses on genes that passed the CPM cutoff](#conduct-pca-and-hierarchical-clustering-analyses-on-genes-that-passed-the-cpm-cutoff-1)
 			- [Divide differentially expressed genes into expression modules](#divide-differentially-expressed-genes-into-expression-modules-1)
 			- [Create a list of genes and their logFC and FDR values for each WGCNA module as IPA inputs](#create-a-list-of-genes-and-their-logfc-and-fdr-values-for-each-wgcna-module-as-ipa-inputs)
+			- [Assess expression data for genes of interest](#assess-expression-data-for-genes-of-interest)
 	- [Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns](#combine-cyan-f--darkred-t-and-cyan-t--darkred-f-module-gene-lists-for-wgcna-analyses-due-to-their-similar-expression-patterns)
 	- [Assess whether excluding 24 h samples for humans allows other clusters to be resolved](#assess-whether-excluding-24-h-samples-for-humans-allows-other-clusters-to-be-resolved)
 		- [Set R inputs](#set-r-inputs-4)
@@ -3391,6 +3392,190 @@ for(i in 1:length(unique(rowcol1))){
   }
 }
 ```
+
+#### Assess expression data for genes of interest
+
+Found genes using information from Ensembl.
+
+##### Set genes of interest list
+
+```{R}
+genes <- as.data.frame(rbind(c("ENST00000307407.8","IL-8","protein_coding"),
+                             c("ENST00000401931.1","IL-8","protein_coding"),
+                             c("ENST00000293379.9","ITGA5","protein_coding"),
+                             c("ENST00000547197.1","ITGA5","protein_coding"),
+                             c("ENST00000396033.6","ITGB1","protein_coding"),
+                             c("ENST00000302278.8","ITGB1","protein_coding"),
+                             c("ENST00000423113.5","ITGB1","protein_coding"),
+                             c("ENST00000488427.1","ITGB1","protein_coding"),
+                             c("ENST00000474568.5","ITGB1","protein_coding"),
+                             c("ENST00000472147.1","ITGB1","protein_coding"),
+                             c("ENST00000480226.5","ITGB1","protein_coding"),
+                             c("ENST00000417122.6","ITGB1","protein_coding"),
+                             c("ENST00000534049.5","ITGB1","protein_coding"),
+                             c("ENST00000475184.5","ITGB1","protein_coding"),
+                             c("ENST00000528877.5","ITGB1","protein_coding"),
+                             c("ENST00000488494.5","ITGB1","protein_coding"),
+                             c("ENST00000414670.2","ITGB1","protein_coding"),
+                             c("ENST00000437302.5","ITGB1","protein_coding"),
+                             c("ENST00000493758.5","ITGB1","protein_coding")
+))
+```
+
+##### Use module assigments as the row color bar
+
+```{R,fig.height = 5, fig.width = 5}
+tpm.selectgenes <- tpm[rownames(tpm) %in% genes[,1],]
+log2tpm.selectgenes <- log2(tpm.selectgenes+1)
+zscore.log2tpm.selectgenes <- as.data.frame(t(scale(t(log2tpm.selectgenes))))
+
+rowsep <- get_heatmap_separators(genes[,2])
+rowlabs <- apply(genes,1,paste,collapse = " | " )
+
+rowcol1 <- c()
+for(i in 1:nrow(genes)){
+  if(genes[i,1] %in% rownames(tpm.de.wgcna)){
+    rowcol1 <- c(rowcol1,tpm.de.wgcna[which(rownames(tpm.de.wgcna) == genes[i,1]),ncol(tpm.de.wgcna)])
+  }else{
+    rowcol1 <- c(rowcol1,"NA")
+  }
+}
+
+pdf(paste0(WORKING.DIR,"/plots/human_tpm_selectgenes_zscorelog2tpm_module_heatmap.pdf"),
+    width = 5, 
+    height = 5)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol1,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+dev.off()
+
+png(paste0(WORKING.DIR,"/plots/human_tpm_selectgenes_zscorelog2tpm_module_heatmap.png"),
+    width = 5, 
+    height = 5,
+    units = "in",res=300)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol1,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+dev.off()
+
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol1,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+```
+
+![image](/images/human_selectgenes_zscorelog2tpm_module_heatmap.png)
+
+##### Use inverse assigments as the row color bar
+
+```{R,fig.height = 5, fig.width = 5}
+rowcol2 <- c()
+for(i in 1:nrow(genes)){
+  if(genes[i,1] %in% rownames(tpm.de.wgcna)){
+    if(tpm.de.wgcna[which(rownames(tpm.de.wgcna) == genes[i,1]),ncol(tpm.de.wgcna)-1] == F){
+      rowcol2 <- c(rowcol2,"grey")
+    }else{
+      rowcol2 <- c(rowcol2,"black")
+    }
+  }else{
+    rowcol2 <- c(rowcol2,"NA")
+  }
+}
+
+pdf(paste0(WORKING.DIR,"/plots/human_tpm_selectgenes_zscorelog2tpm_invert_heatmap.pdf"),
+    width = 5, 
+    height = 5)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol2,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+dev.off()
+
+png(paste0(WORKING.DIR,"/plots/human_tpm_selectgenes_zscorelog2tpm_invert_heatmap.png"),
+    width = 5, 
+    height = 5,
+    units = "in",res=300)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol2,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+dev.off()
+
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = F,
+		  RowSideColors=rowcol2,
+		  ColSideColors=colcol,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  rowsep = rowsep,
+		  colsep = colsep,
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "none")
+```
+
+![image](/images/human_selectgenes_zscorelog2tpm_invert_heatmap.png)
 
 ## Combine cyan F + darkred T and cyan T + darkred F module gene lists for WGCNA analyses due to their similar expression patterns
 
