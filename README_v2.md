@@ -125,6 +125,9 @@
 		- [Create TPM data frame](#create-tpm-data-frame)
 		- [Calculate the log2TPM ratios between the two tumor samples and the metaplasia sample versus the tumor adjacent sample](#calculate-the-log2tpm-ratios-between-the-two-tumor-samples-and-the-metaplasia-sample-versus-the-tumor-adjacent-sample)
 		- [For each comparison, find the top 3000 up- and down-regulated genes relative to the tumor adjacent sample](#for-each-comparison-find-the-top-3000-up--and-down-regulated-genes-relative-to-the-tumor-adjacent-sample)
+		- [Assess expression data for genes of interest](#assess-expression-data-for-genes-of-interest-1)
+			- [Set genes of interest list](#set-genes-of-interest-list)
+			- [Identifies average rank in expression of genes of interest](#identifies-average-rank-in-expression-of-genes-of-interest)
 	- [Assess which in vivo human samples are most similar to the in vitro human samples](#assess-which-in-vivo-human-samples-are-most-similar-to-the-in-vitro-human-samples)
 		- [Set R inputs](#set-r-inputs-6)
 		- [Load packages and view sessionInfo](#load-packages-and-view-sessioninfo-3)
@@ -4239,6 +4242,7 @@ for(i in 1:length(unique(rowcol1))){
 }
 ```
 
+
 # Conduct in vivo human RNA-Seq analysis
 
 ## Quantify human genes directly from FASTQ files
@@ -4275,30 +4279,33 @@ WORKING.DIR <- "Z:/EBMAL/mchung_dir/EHPYL/"
 
 ```{R}
 library(edgeR)
+library(gplots)
 
 sessionInfo()
 ```
 
 ```{R, eval = F}
-R version 3.5.0 (2018-04-23)
+R version 4.0.0 (2020-04-24)
 Platform: x86_64-w64-mingw32/x64 (64-bit)
-Running under: Windows >= 8 x64 (build 9200)
+Running under: Windows 10 x64 (build 18362)
 
 Matrix products: default
 
 locale:
-[1] LC_COLLATE=English_United States.1252  LC_CTYPE=English_United States.1252    LC_MONETARY=English_United States.1252
-[4] LC_NUMERIC=C				   LC_TIME=English_United States.1252    
+[1] LC_COLLATE=English_United States.1252  LC_CTYPE=English_United States.1252   
+[3] LC_MONETARY=English_United States.1252 LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.1252    
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] edgeR_3.24.3 limma_3.38.3
+[1] gplots_3.0.3 edgeR_3.30.0 limma_3.44.1
 
 loaded via a namespace (and not attached):
-[1] compiler_3.5.0  tools_3.5.0     yaml_2.2.0	Rcpp_1.0.2	grid_3.5.0	locfit_1.5-9.1  knitr_1.23	xfun_0.8	 
-[9] lattice_0.20-35
+ [1] compiler_4.0.0     tools_4.0.0        yaml_2.2.1         Rcpp_1.0.4.6       KernSmooth_2.23-16
+ [6] gdata_2.18.0       grid_4.0.0         locfit_1.5-9.4     knitr_1.28         caTools_1.18.0    
+[11] xfun_0.14          bitops_1.0-6       gtools_3.8.2       lattice_0.20-41   
 ```
 
 ### Create counts data frame
@@ -4434,6 +4441,131 @@ for(i in 1:length(edgeR.pairwise.degenes)){
 		  quote = F,
 		  sep = "\t")
 }
+```
+
+
+### Assess expression data for genes of interest
+
+Found genes using information from Ensembl.
+
+#### Set genes of interest list
+
+```{R}
+genes <- as.data.frame(rbind(c("ENST00000307407.8","IL-8","protein_coding"),
+                             c("ENST00000401931.1","IL-8","protein_coding"),
+                             c("ENST00000293379.9","ITGA5","protein_coding"),
+                             c("ENST00000547197.1","ITGA5","protein_coding"),
+                             c("ENST00000396033.6","ITGB1","protein_coding"),
+                             c("ENST00000302278.8","ITGB1","protein_coding"),
+                             c("ENST00000423113.5","ITGB1","protein_coding"),
+                             c("ENST00000488427.1","ITGB1","protein_coding"),
+                             c("ENST00000474568.5","ITGB1","protein_coding"),
+                             c("ENST00000472147.1","ITGB1","protein_coding"),
+                             c("ENST00000480226.5","ITGB1","protein_coding"),
+                             c("ENST00000417122.6","ITGB1","protein_coding"),
+                             c("ENST00000534049.5","ITGB1","protein_coding"),
+                             c("ENST00000475184.5","ITGB1","protein_coding"),
+                             c("ENST00000528877.5","ITGB1","protein_coding"),
+                             c("ENST00000488494.5","ITGB1","protein_coding"),
+                             c("ENST00000414670.2","ITGB1","protein_coding"),
+                             c("ENST00000437302.5","ITGB1","protein_coding"),
+                             c("ENST00000493758.5","ITGB1","protein_coding")
+))
+```
+
+#### Identifies average rank in expression of genes of interest
+
+The closer to 0, the more the gene is expressed.
+
+```{R}
+rank <- counts
+for(i in 1:ncol(rank)){
+  rank[,i] <- rank(-counts[,i])
+}
+
+avgrank <- rowMeans(rank)
+
+for(i in 1:nrow(genes)){
+  print(paste(genes[i,1],
+              round(avgrank[which(rownames(rank) == genes[i,1])]/max(avgrank)*100,2),
+              sep = "         "))
+}
+```
+
+```{R, eval = F}
+[1] "ENST00000307407.8         6.71"
+[1] "ENST00000401931.1         28.74"
+[1] "ENST00000293379.9         2.65"
+[1] "ENST00000547197.1         23.67"
+[1] "ENST00000396033.6         11.91"
+[1] "ENST00000302278.8         0.16"
+[1] "ENST00000423113.5         42.82"
+[1] "ENST00000488427.1         44.76"
+[1] "ENST00000474568.5         33.16"
+[1] "ENST00000472147.1         69.4"
+[1] "ENST00000480226.5         49.45"
+[1] "ENST00000417122.6         37.42"
+[1] "ENST00000534049.5         39.03"
+[1] "ENST00000475184.5         87.46"
+[1] "ENST00000528877.5         73.64"
+[1] "ENST00000488494.5         63.58"
+[1] "ENST00000414670.2         61.09"
+[1] "ENST00000437302.5         100"
+[1] "ENST00000493758.5         76.44
+```
+
+```{R,fig.height = 5, fig.width = 5}
+hmcol <- colorRampPalette(c("navyblue","white","firebrick3"))(12)
+tpm.selectgenes <- tpm[match(genes[,1],rownames(tpm)),]
+log2tpm.selectgenes <- log2(tpm.selectgenes+1)
+zscore.log2tpm.selectgenes <- as.data.frame(t(scale(t(log2tpm.selectgenes))))
+
+rowlabs <- apply(genes,1,paste,collapse = " | " )
+
+pdf(paste0(WORKING.DIR,"/plots/human_invivo_tpm_selectgenes_zscorelog2tpm_heatmap.pdf"),
+    width = 5, 
+    height = 5)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
+dev.off()
+
+png(paste0(WORKING.DIR,"/plots/human_invivo_tpm_selectgenes_zscorelog2tpm_heatmap.png"),
+    width = 5, 
+    height = 5,
+    units = "in",res=300)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
+dev.off()
+
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
 ```
 
 ## Assess which in vivo human samples are most similar to the in vitro human samples
