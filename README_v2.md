@@ -135,6 +135,9 @@
 		- [Create TPM data frame for in vivo and in vitro human data sets](#create-tpm-data-frame-for-in-vivo-and-in-vitro-human-data-sets)
 		- [Conduct a hierarchical cluster analysis on the TPM values across all in vivo and in vitro human samples](#conduct-a-hierarchical-cluster-analysis-on-the-tpm-values-across-all-in-vivo-and-in-vitro-human-samples)
 		- [Conduct a PCA on the TPM values across all in vivo and in vitro human samples](#conduct-a-pca-on-the-tpm-values-across-all-in-vivo-and-in-vitro-human-samples)
+		- [Assess expression data for genes of interest](#assess-expression-data-for-genes-of-interest-2)
+			- [Set genes of interest list](#set-genes-of-interest-list-1)
+			- [Plot heatmap for genes of interest](#plot-heatmap-for-genes-of-interest)
 
 <!-- /MarkdownTOC -->
 
@@ -4591,29 +4594,29 @@ sessionInfo()
 ```
 
 ```{R, eval = F}
-R version 3.5.0 (2018-04-23)
+R version 4.0.0 (2020-04-24)
 Platform: x86_64-w64-mingw32/x64 (64-bit)
-Running under: Windows >= 8 x64 (build 9200)
+Running under: Windows 10 x64 (build 18362)
 
 Matrix products: default
 
 locale:
 [1] LC_COLLATE=English_United States.1252  LC_CTYPE=English_United States.1252    LC_MONETARY=English_United States.1252
-[4] LC_NUMERIC=C				   LC_TIME=English_United States.1252    
+[4] LC_NUMERIC=C                           LC_TIME=English_United States.1252    
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] ggrepel_0.8.1   pvclust_2.0-0   ggplot2_3.2.0   FactoMineR_1.42 cowplot_1.0.0  
+[1] pvclust_2.2-0  ggrepel_0.8.2  ggplot2_3.3.0  FactoMineR_2.3 cowplot_1.0.0 
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.2	     rstudioapi_0.10	cluster_2.0.7-1	knitr_1.23	     magrittr_1.5	   MASS_7.3-51.4	 
- [7] leaps_3.0		scatterplot3d_0.3-41 tidyselect_0.2.5     munsell_0.5.0	  lattice_0.20-35	colorspace_1.4-1    
-[13] R6_2.4.0		 rlang_0.4.0	    dplyr_0.8.3	    tools_3.5.0	    grid_3.5.0	     gtable_0.3.0	  
-[19] xfun_0.8		 withr_2.1.2	    yaml_2.2.0	     lazyeval_0.2.2	 assertthat_0.2.1     tibble_2.1.3	  
-[25] crayon_1.3.4	   purrr_0.3.2	    glue_1.3.1	     labeling_0.3	   compiler_3.5.0	 pillar_1.4.2	  
-[31] scales_1.0.0	   flashClust_1.01-2    pkgconfig_2.0.2     
+ [1] Rcpp_1.0.4.6         rstudioapi_0.11      cluster_2.1.0        knitr_1.28           magrittr_1.5         MASS_7.3-51.5       
+ [7] leaps_3.1            scatterplot3d_0.3-41 tidyselect_1.1.0     munsell_0.5.0        lattice_0.20-41      colorspace_1.4-1    
+[13] R6_2.4.1             rlang_0.4.6          dplyr_0.8.5          tools_4.0.0          grid_4.0.0           gtable_0.3.0        
+[19] xfun_0.14            withr_2.2.0          ellipsis_0.3.1       assertthat_0.2.1     tibble_3.0.1         lifecycle_0.2.0     
+[25] crayon_1.3.4         purrr_0.3.4          vctrs_0.3.0          glue_1.4.1           compiler_4.0.0       pillar_1.4.4        
+[31] scales_1.1.1         flashClust_1.01-2    pkgconfig_2.0.3     
 ```
 
 ### Combine counts data frame for in vivo and in vitro human data sets
@@ -4629,7 +4632,7 @@ counts <- as.data.frame(cbind(invitro_counts,
 ### Create TPM data frame for in vivo and in vitro human data sets
 
 ```{R}
-counts.files <- list.files(paste0(WORKING.DIR,"/invivo/kallisto/", recursive = T, pattern = "abundance.tsv")
+counts.files <- list.files(paste0(WORKING.DIR,"/invivo/kallisto/"), recursive = T, pattern = "abundance.tsv")
 genelength <- read.delim(paste0(WORKING.DIR,"/invivo/kallisto/",counts.files[1]))
 genelength <- genelength[match(rownames(counts),genelength[,1]),3]
 
@@ -4712,3 +4715,87 @@ plot_grid(plotlist=list(pca.plot, pca_with_label.plot),
 
 ![image](/images/human_invivo_v_invitro_pca.png)
 
+### Assess expression data for genes of interest
+
+Found genes using information from Ensembl.
+
+#### Set genes of interest list
+
+```{R}
+genes <- as.data.frame(rbind(c("ENST00000307407.8","IL-8","protein_coding"),
+                             c("ENST00000401931.1","IL-8","protein_coding"),
+                             c("ENST00000293379.9","ITGA5","protein_coding"),
+                             c("ENST00000547197.1","ITGA5","protein_coding"),
+                             c("ENST00000396033.6","ITGB1","protein_coding"),
+                             c("ENST00000302278.8","ITGB1","protein_coding"),
+                             c("ENST00000423113.5","ITGB1","protein_coding"),
+                             c("ENST00000488427.1","ITGB1","protein_coding"),
+                             c("ENST00000474568.5","ITGB1","protein_coding"),
+                             c("ENST00000472147.1","ITGB1","protein_coding"),
+                             c("ENST00000480226.5","ITGB1","protein_coding"),
+                             c("ENST00000417122.6","ITGB1","protein_coding"),
+                             c("ENST00000534049.5","ITGB1","protein_coding"),
+                             c("ENST00000475184.5","ITGB1","protein_coding"),
+                             c("ENST00000528877.5","ITGB1","protein_coding"),
+                             c("ENST00000488494.5","ITGB1","protein_coding"),
+                             c("ENST00000414670.2","ITGB1","protein_coding"),
+                             c("ENST00000437302.5","ITGB1","protein_coding"),
+                             c("ENST00000493758.5","ITGB1","protein_coding")
+))
+```
+
+#### Plot heatmap for genes of interest
+
+```{R,fig.height = 5, fig.width = 8}
+hmcol <- colorRampPalette(c("navyblue","white","firebrick3"))(12)
+tpm.selectgenes <- tpm[match(genes[,1],rownames(tpm)),]
+log2tpm.selectgenes <- log2(tpm.selectgenes+1)
+zscore.log2tpm.selectgenes <- as.data.frame(t(scale(t(log2tpm.selectgenes))))
+
+rowlabs <- apply(genes,1,paste,collapse = " | " )
+
+pdf(paste0(WORKING.DIR,"/plots/human_bothdatasets_tpm_selectgenes_zscorelog2tpm_heatmap.pdf"),
+    width = 8, 
+    height = 5)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
+dev.off()
+
+png(paste0(WORKING.DIR,"/plots/human_bothdatasets_tpm_selectgenes_zscorelog2tpm_heatmap.png"),
+    width = 8, 
+    height = 5,
+    units = "in",res=300)
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
+dev.off()
+
+heatmap.2(as.matrix(zscore.log2tpm.selectgenes),
+		  col=hmcol,
+		  trace="none",
+		  labRow=rowlabs,
+		  Rowv = F,
+		  Colv = T,
+		  #lhei = c(2,8),
+		  breaks = seq(-3,3,by=.5),
+		  na.color = "grey",
+		  key = F,
+		  dendrogram = "col")
+```
